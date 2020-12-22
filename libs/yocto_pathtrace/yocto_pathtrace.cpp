@@ -1082,19 +1082,20 @@ static float sample_lights_pdf(const pathtrace_scene* scene,
 static vec3f eval_scattering(
     const pathtrace_vsdf& vsdf, const vec3f& outgoing, const vec3f& incoming) {
   // YOUR CODE GOES HERE ----------------------------------------------------
-  return zero3f;
+  return vsdf.density * vsdf.scatter *
+    eval_phasefunction(vsdf.anisotropy, outgoing, incoming);
 }
 
 static vec3f sample_scattering(const pathtrace_vsdf& vsdf,
     const vec3f& outgoing, float rnl, const vec2f& rn) {
   // YOUR CODE GOES HERE ----------------------------------------------------
-  return zero3f;
+  return sample_phasefunction(vsdf.anisotropy, outgoing, rn);
 }
 
 static float sample_scattering_pdf(
     const pathtrace_vsdf& vsdf, const vec3f& outgoing, const vec3f& incoming) {
   // YOUR CODE GOES HERE ----------------------------------------------------
-  return 0;
+  return sample_phasefunction_pdf(vsdf.anisotropy, outgoing, incoming);
 }
 
 static vec4f shade_path(const pathtrace_scene* scene, const ray3f& ray_,
@@ -1104,7 +1105,132 @@ static vec4f shade_path(const pathtrace_scene* scene, const ray3f& ray_,
 static vec4f shade_volpath(const pathtrace_scene* scene, const ray3f& ray_,
     rng_state& rng, const pathtrace_params& params) {
   // YOUR CODE GOES HERE ----------------------------------------------------
-  return shade_path(scene, ray_, rng, params);
+  //<init>
+  auto radiance = zero3f;
+  auto weight   = vec3f{1, 1, 1};
+  auto ray      = ray_;
+  auto volume_stack  = vector<pathtrace_vsdf>{};
+  auto hit      = false;
+
+  for (auto bounce = 0; bounce < params.bounces; bounce++) {
+    // intersect next point
+    auto intersection = intersect_scene_bvh(scene, ray);
+    if (!intersection.hit) {
+      radiance += weight * eval_environment(scene, ray);
+      break;
+    }
+
+    //<sample transmittance>
+    auto in_volume = false;
+    if (!volume_stack.empty()) {
+      auto extinction = volume_stack.back().density;
+      auto distance = sample_transmittance(
+            extinction, intersection.distance, rand1f(rng), rand1f(rng));
+      weight *= eval_transmittance(extinction, distance) /
+          sample_transmittance_pdf(extinction, distance,
+                                    intersection.distance);
+      in_volume = distance < intersection.distance;
+      intersection.distance = distance;
+    }
+
+    if(!in_volume) {
+      //<handle surface>
+
+      // prepare shading point
+      auto outgoing = -ray.d;
+      auto instance = scene->instances[intersection.instance];
+      auto element  = intersection.element;
+      auto uv       = intersection.uv;
+
+      //<eval point and material>
+      auto position = eval_position(instance, element, uv);
+      auto normal   = eval_shading_normal(instance, element, uv, outgoing);
+      auto emission = eval_emission(instance, element, uv, normal, outgoing);
+      auto brdf     = eval_brdf(instance, element, uv, normal, outgoing);
+
+      // handle opacity
+      if (brdf.opacity < 1 && rand1f(rng) >= brdf.opacity) {
+        ray = {position + ray.d * 1e-2f, ray.d};
+        bounce -= 1;
+        continue;
+      }
+      hit = true;
+
+      //<emission>
+      radiance += weight * eval_emission(emission, normal, outgoing);
+
+      auto incoming = zero3f;
+      if (!is_delta(brdf)) {
+        if (rand1f(rng) < 0.5f) {
+          incoming = sample_brdfcos(
+              brdf, normal, outgoing, rand1f(rng), rand2f(rng));
+        } else {
+          incoming = sample_lights(
+              scene, position, rand1f(rng), rand1f(rng), rand2f(rng));
+        }
+        weight *= eval_brdfcos(brdf, normal, outgoing, incoming) /
+                  (0.5f * sample_brdfcos_pdf(brdf, normal, outgoing, incoming) +
+                      0.5f * sample_lights_pdf(scene, position, incoming));
+      } else {
+        incoming = sample_delta(brdf, normal, outgoing, rand1f(rng));
+        weight *= eval_delta(brdf, normal, outgoing, incoming) /
+                  sample_delta_pdf(brdf, normal, outgoing, incoming);
+      }   
+
+      // update volume stack
+      if (has_volume(instance) &&
+          dot(normal, outgoing) * dot(normal, incoming) < 0) {
+        if (volume_stack.empty()) {
+          auto vsdf = eval_vsdf(instance, element, uv);
+          volume_stack.push_back(vsdf);
+        } else {
+          volume_stack.pop_back();
+        }
+      }
+
+      // setup next iteration
+      ray = {position, incoming};   
+      
+    } else {
+      //<handle volume>
+      
+      // prepare shading point
+      auto  outgoing = -ray.d;
+      auto  position = ray.o + ray.d * intersection.distance;
+      auto& vsdf     = volume_stack.back();
+
+      // handle opacity
+      hit = true;
+
+      // next direction
+      auto incoming = zero3f;
+      if (rand1f(rng) < 0.5f) {
+        incoming = sample_scattering(vsdf, outgoing, rand1f(rng), rand2f(rng));
+      } else {
+        incoming = sample_lights(
+              scene, position, rand1f(rng), rand1f(rng), rand2f(rng));
+      }
+      weight *=
+          eval_scattering(vsdf, outgoing, incoming) /
+          (0.5f * sample_scattering_pdf(vsdf, outgoing, incoming) +
+              0.5f * sample_lights_pdf(scene, position, incoming));
+
+      // setup next iteration
+      ray = {position, incoming};
+    }
+
+    if (weight == zero3f || !isfinite(weight)) break;
+    
+    //<russian roulette>
+    if (bounce > 3) {
+      auto rr_prob = min((float)0.99, max(weight));
+      if (rand1f(rng) >= rr_prob) break;
+      weight *= 1 / rr_prob;
+    }
+
+  }
+
+  return {radiance.x, radiance.y, radiance.z, hit ? 1.0f : 0.0f};
 }
 
 // Path tracing.
