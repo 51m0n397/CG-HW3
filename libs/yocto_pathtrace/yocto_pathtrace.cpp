@@ -1428,6 +1428,121 @@ template <typename T>
 static void tesselate_catmullclark(
     std::vector<vec4i>& quads, std::vector<T>& vert, bool lock_boundary) {
   // YOUR CODE GOES HERE ----------------------------------------------------
+
+  //<initialize edges>
+
+  // construct edge map and get edges and boundary
+  auto emap     = make_edge_map(quads);
+  auto edges    = get_edges(emap);
+  auto boundary = get_boundary(emap);
+  // initialize number of elements
+  auto nv = (int)vert.size();
+  auto ne = (int)edges.size();
+  auto nb = (int)boundary.size();
+  auto nf = (int)quads.size();
+
+  //<create vertices>
+
+  auto tverts = vector<T>();
+  for (auto v : vert) // vertices [0, nv)
+    tverts.push_back(v);
+  for (auto e : edges) // edge vertices [nv, nv+ne)
+    tverts.push_back((vert[e.x] + vert[e.y]) / 2);
+  for (auto q : quads) // face vertices [nv+ne, nv+ne+nf)
+    if (q.z != q.w)    // quads
+      tverts.push_back((vert[q.x] + vert[q.y] + vert[q.z] + vert[q.w]) / 4);
+    else               // triangles
+      tverts.push_back((vert[q.x] + vert[q.y] + vert[q.z]) / 3);
+
+  //<create faces>
+
+  auto tquads = vector<vec4i>(nf * 4);  // conservative allocation
+    auto qi     = 0;
+    for (auto i = 0; i < nf; i++) {
+      auto q = quads[i];
+      if (q.z != q.w) {
+        tquads[qi++] = {q.x, nv + edge_index(emap, {q.x, q.y}),
+            nv + ne + i, nv + edge_index(emap, {q.w, q.x})};
+        tquads[qi++] = {q.y, nv + edge_index(emap, {q.y, q.z}),
+            nv + ne + i, nv + edge_index(emap, {q.x, q.y})};
+        tquads[qi++] = {q.z, nv + edge_index(emap, {q.z, q.w}),
+            nv + ne + i, nv + edge_index(emap, {q.y, q.z})};
+        tquads[qi++] = {q.w, nv + edge_index(emap, {q.w, q.x}),
+            nv + ne + i, nv + edge_index(emap, {q.z, q.w})};
+      } else {
+        tquads[qi++] = {q.x, nv + edge_index(emap, {q.x, q.y}),
+            nv + ne + i, nv + edge_index(emap, {q.z, q.x})};
+        tquads[qi++] = {q.y, nv + edge_index(emap, {q.y, q.z}),
+            nv + ne + i, nv + edge_index(emap, {q.x, q.y})};
+        tquads[qi++] = {q.z, nv + edge_index(emap, {q.z, q.x}),
+            nv + ne + i, nv + edge_index(emap, {q.y, q.z})};
+      }
+    }
+    tquads.resize(qi);
+
+  //<setup boundary>
+
+  auto tboundary = vector<vec2i>();
+  for (auto e : boundary) {
+    tboundary.push_back({e.x, nv + edge_index(emap, e)});
+    tboundary.push_back({nv + edge_index(emap, e), e.y});
+  }
+  auto tcrease_edges = vector<vec2i>();
+  auto tcrease_verts = vector<int>();
+  if (lock_boundary) {
+    for (auto& b : tboundary) {
+      tcrease_verts.push_back(b.x);
+      tcrease_verts.push_back(b.y);
+    }
+  } else {
+    for (auto& b : tboundary) tcrease_edges.push_back(b);
+  }
+  auto tverts_val = vector<int>(tverts.size(), 2);
+  for (auto& e : tboundary) {
+    tverts_val[e.x] = (lock_boundary) ? 0 : 1;
+    tverts_val[e.y] = (lock_boundary) ? 0 : 1;
+  }
+
+  //<averaging>
+
+  auto avert  = vector<T>(tverts.size(), T());
+  auto acount = vector<int>(tverts.size(), 0);
+  for (auto p : tcrease_verts) {
+    if (tverts_val[p] != 0) continue;
+    avert[p] += tverts[p]; 
+    acount[p] += 1;
+  }
+  for (auto& e : tcrease_edges) {
+    auto c = (tverts[e.x] + tverts[e.y]) / 2;
+    for (auto vid : e) {
+      if (tverts_val[vid] != 1) continue;
+      avert[vid] += c; 
+      acount[vid] += 1;
+    }
+  }
+  for (auto& q : tquads) {
+    auto c = (tverts[q.x] + tverts[q.y] +
+              tverts[q.z] + tverts[q.w]) / 4;
+    for (auto vid : q) {
+      if (tverts_val[vid] != 2) continue;
+      avert[vid] += c; 
+      acount[vid] += 1;
+    }
+  }
+  for (auto i = 0; i < tverts.size(); i++) 
+    avert[i] /= (float)acount[i];
+
+  //<correction>
+
+  for (auto i = 0; i < tverts.size(); i++) {
+    if (tverts_val[i] != 2) continue;
+    avert[i] = tverts[i] +
+      (avert[i] - tverts[i]) * (4 / (float)acount[i]);
+  }
+  tverts = avert;
+
+  quads = tquads;
+  vert = tverts;
 }
 
 void tesselate_shape(pathtrace_shape* shape) {
