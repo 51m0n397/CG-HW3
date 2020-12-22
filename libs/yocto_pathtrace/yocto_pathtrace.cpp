@@ -226,7 +226,21 @@ static pair<vec3f, vec3f> eval_element_tangents(
 static vec3f eval_normalmap(
     const pathtrace_instance* instance, int element, const vec2f& uv) {
   // YOUR CODE GOES HERE -----------------------------------------------------
-  return eval_normal(instance, element, uv);
+  auto shape      = instance->shape;
+  auto normal_tex = instance->material->normal_tex;
+  auto normal   = eval_normal(instance, element, uv);
+  auto texcoord = eval_texcoord(instance, element, uv);
+  if (normal_tex != nullptr && !shape->triangles.empty()) {
+    auto normalmap = -1 + 2 * xyz(eval_texture(normal_tex, texcoord, true));
+    auto [tu, tv]  = eval_element_tangents(instance, element);
+    auto frame     = frame3f{tu, tv, normal, zero3f};
+    frame.x        = orthonormalize(frame.x, frame.z);
+    frame.y        = normalize(cross(frame.z, frame.x));
+    auto flip_v    = dot(frame.y, tv) < 0;
+    normalmap.y *= flip_v ? 1 : -1;
+    normal = transform_normal(frame, normalmap);
+  }
+  return normal;
 }
 
 // Eval shading normal
