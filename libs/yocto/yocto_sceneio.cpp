@@ -1431,6 +1431,26 @@ static bool load_json_scene(const string& filename, sceneio_scene* scene,
       if (!get_stexture(ejs, "opacity_tex", material->opacity_tex))
         return false;
       if (!get_ctexture(ejs, "normal_tex", material->normal_tex)) return false;
+
+      /* hair */
+      if (!get_value(ejs, "sigma_a", material->sigma_a)) return false;
+      if (!get_value(ejs, "hair_color", material->hair_color)) return false;
+      if (!get_value(ejs, "eumelanin", material->eumelanin)) return false;
+      if (!get_value(ejs, "pheomelanin", material->pheomelanin)) return false;
+      if (!get_value(ejs, "eta", material->eta)) return false;
+      if (!get_value(ejs, "beta_m", material->beta_m)) return false;
+      if (!get_value(ejs, "beta_n", material->beta_n)) return false;
+      if (!get_value(ejs, "alpha", material->alpha)) return false;
+
+      if (!get_ctexture(ejs, "sigma_a_tex", material->sigma_a_tex)) return false;
+      if (!get_ctexture(ejs, "hair_color_tex", material->hair_color_tex)) return false;
+      if (!get_ctexture(ejs, "eumelanin_tex", material->eumelanin_tex)) return false;
+      if (!get_ctexture(ejs, "pheomelanin_tex", material->pheomelanin_tex)) return false;
+      if (!get_ctexture(ejs, "eta_tex", material->eta_tex)) return false;
+      if (!get_ctexture(ejs, "beta_m_tex", material->beta_m_tex)) return false;
+      if (!get_ctexture(ejs, "beta_n_tex", material->beta_n_tex)) return false;
+      if (!get_ctexture(ejs, "alpha_tex", material->alpha_tex)) return false;
+      
       material_map[material->name] = material;
     }
   }
@@ -1676,6 +1696,25 @@ static bool save_json_scene(const string& filename, const sceneio_scene* scene,
     add_tex(ejs, "coat_tex", material->coat_tex);
     add_tex(ejs, "opacity_tex", material->opacity_tex);
     add_tex(ejs, "normal_tex", material->normal_tex);
+
+    /* hair */
+    add_opt(ejs, "sigma_a", material->sigma_a, def_material.sigma_a);
+    add_opt(ejs, "hair_color", material->hair_color, def_material.hair_color);
+    add_opt(ejs, "eumelanin", material->eumelanin, def_material.eumelanin);
+    add_opt(ejs, "pheomelanin", material->pheomelanin, def_material.pheomelanin);
+    add_opt(ejs, "eta", material->eta, def_material.eta);
+    add_opt(ejs, "beta_m", material->beta_m, def_material.beta_m);
+    add_opt(ejs, "beta_n", material->beta_n, def_material.beta_n);
+    add_opt(ejs, "alpha", material->alpha, def_material.alpha);
+
+    add_tex(ejs, "sigma_a_tex", material->sigma_a_tex);
+    add_tex(ejs, "hair_color_tex", material->hair_color_tex);
+    add_tex(ejs, "eumelanin_tex", material->eumelanin_tex);
+    add_tex(ejs, "pheomelanin_tex", material->pheomelanin_tex);
+    add_tex(ejs, "eta_tex", material->eta_tex);
+    add_tex(ejs, "beta_m_tex", material->beta_m_tex);
+    add_tex(ejs, "beta_n_tex", material->beta_n_tex);
+    add_tex(ejs, "alpha_tex", material->alpha_tex);
   }
 
   auto def_object = sceneio_instance{};

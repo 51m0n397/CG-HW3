@@ -140,6 +140,26 @@ struct pathtrace_material {
   pathtrace_texture* scattering_tex   = nullptr;
   pathtrace_texture* opacity_tex      = nullptr;
   pathtrace_texture* normal_tex       = nullptr;
+
+  /* hair */
+  // using -1 as undefined
+  vec3f sigma_a     = {-1, -1, -1};
+  vec3f hair_color  = {-1, -1, -1};
+  float eumelanin   = -1;
+  float pheomelanin = -1;
+  float eta         = 1.55;
+  float beta_m      = 0.3;
+  float beta_n      = 0.3;
+  float alpha       = 2;
+  
+  pathtrace_texture* sigma_a_tex     = nullptr;
+  pathtrace_texture* hair_color_tex  = nullptr;
+  pathtrace_texture* eumelanin_tex   = nullptr;
+  pathtrace_texture* pheomelanin_tex = nullptr;
+  pathtrace_texture* eta_tex         = nullptr;
+  pathtrace_texture* beta_m_tex      = nullptr;
+  pathtrace_texture* beta_n_tex      = nullptr;
+  pathtrace_texture* alpha_tex       = nullptr;
 };
 
 // Shape data represented as an indexed meshes of elements.
@@ -274,6 +294,25 @@ void set_thin(pathtrace_material* material, bool thin);
 void set_scattering(pathtrace_material* material, const vec3f& scattering,
     float scanisotropy, pathtrace_texture* scattering_tex = nullptr);
 void set_normalmap(pathtrace_material* material, pathtrace_texture* normal_tex);
+
+/* hair */
+void set_sigma_a(pathtrace_material* material, const vec3f& sigma_a,
+    pathtrace_texture* sigma_a_tex = nullptr);
+void set_hair_color(pathtrace_material* material, const vec3f& hair_color,
+    pathtrace_texture* hair_color_tex = nullptr);
+void set_eumelanin(pathtrace_material* material, float eumelanin,
+    pathtrace_texture* eumelanin_tex = nullptr);
+void set_pheomelanin(pathtrace_material* material, float pheomelanin,
+    pathtrace_texture* pheomelanin_tex = nullptr);
+void set_eta(pathtrace_material* material, float eta,
+    pathtrace_texture* eta_tex = nullptr);
+void set_beta_m(pathtrace_material* material, float beta_m,
+    pathtrace_texture* beta_m_tex = nullptr);
+void set_beta_n(pathtrace_material* material, float beta_n,
+    pathtrace_texture* beta_n_tex = nullptr);
+void set_alpha(pathtrace_material* material, float alpha,
+    pathtrace_texture* alpha_tex = nullptr);
+
 
 // shape properties
 void set_points(pathtrace_shape* shape, const vector<int>& points);

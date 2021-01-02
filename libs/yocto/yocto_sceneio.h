@@ -138,6 +138,26 @@ struct sceneio_material {
   sceneio_texture* coat_tex         = nullptr;
   sceneio_texture* opacity_tex      = nullptr;
   sceneio_texture* normal_tex       = nullptr;
+
+  /* hair */
+  // using -1 as undefined
+  vec3f sigma_a     = {-1, -1, -1};
+  vec3f hair_color  = {-1, -1, -1};
+  float eumelanin   = -1;
+  float pheomelanin = -1;
+  float eta         = 1.55;
+  float beta_m      = 0.3;
+  float beta_n      = 0.3;
+  float alpha       = 2;
+  
+  sceneio_texture* sigma_a_tex     = nullptr;
+  sceneio_texture* hair_color_tex  = nullptr;
+  sceneio_texture* eumelanin_tex   = nullptr;
+  sceneio_texture* pheomelanin_tex = nullptr;
+  sceneio_texture* eta_tex         = nullptr;
+  sceneio_texture* beta_m_tex      = nullptr;
+  sceneio_texture* beta_n_tex      = nullptr;
+  sceneio_texture* alpha_tex       = nullptr;
 };
 
 // Shape data represented as indexed meshes of elements.

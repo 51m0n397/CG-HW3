@@ -35,6 +35,8 @@
 #include <yocto/yocto_shading.h>
 #include <yocto/yocto_shape.h>
 
+#include <yocto_hair/yocto_hair.h>
+
 // -----------------------------------------------------------------------------
 // IMPLEMENTATION FOR SCENE EVALUATION
 // -----------------------------------------------------------------------------
@@ -282,6 +284,19 @@ struct pathtrace_brdf {
   float metal_pdf        = 0;
   float transmission_pdf = 0;
   float refraction_pdf   = 0;
+
+  /* hair */
+  bool hair        = false;
+  float eta        = 1;
+  vec3f sigma_a    = {0, 0, 0};
+  float alpha      = 0;
+  float s          = 0;
+  vec3f sin2kAlpha = {0, 0, 0};
+  vec3f cos2kAlpha = {0, 0, 0};
+  float h          = 0;
+  float gammaO     = 0;
+  frame3f frame    = identity3x4f;
+  array<float, pMax + 1> v;
 };
 
 // Eval material to obatain emission, brdf and opacity.
@@ -358,6 +373,76 @@ static pathtrace_brdf eval_brdf(const pathtrace_instance* instance, int element,
     brdf.transmission_pdf /= pdf_sum;
     brdf.refraction_pdf /= pdf_sum;
   }
+
+
+  /* hair */
+  auto eta    = material->eta *
+                eval_texture(material->eta_tex, texcoord, true).x;
+  auto beta_m = material->beta_m *
+                eval_texture(material->beta_m_tex, texcoord, true).x;
+  auto beta_n = material->beta_n *
+                eval_texture(material->beta_n_tex, texcoord, true).x;
+  auto alpha  = material->alpha *
+                eval_texture(material->alpha_tex, texcoord, true).x;
+
+
+  auto sigma_a     = material->sigma_a *
+                     xyz(eval_texture(material->sigma_a_tex, texcoord, false));
+  auto hair_color  = material->hair_color *
+                     xyz(eval_texture(material->hair_color_tex, texcoord, false));
+  auto eumelanin   = material->eumelanin *
+                     eval_texture(material->eumelanin_tex, texcoord, true).x;
+  auto pheomelanin = material->pheomelanin *
+                     eval_texture(material->pheomelanin_tex, texcoord, true).x;
+
+  if (min(sigma_a) >= 0) {
+    brdf.hair = true;
+  } else if (min(hair_color) >= 0) {
+    sigma_a = SigmaAFromReflectance(hair_color, beta_n);
+    brdf.hair = true;
+  } else if (eumelanin >= 0 || pheomelanin >= 0) {
+    eumelanin = eumelanin >=0 ? eumelanin : 0;
+    pheomelanin = pheomelanin >=0 ? pheomelanin : 0;
+    sigma_a = SigmaAFromConcentration(eumelanin, pheomelanin);
+    brdf.hair = true;
+  }
+
+  if (brdf.hair) {
+    brdf.h = -1 + 2 * uv[1];
+    brdf.gammaO = SafeASin(brdf.h);
+
+    // Compute longitudinal variance (v) from beta_m
+    brdf.v[0] = Sqr(0.726f * beta_m + 0.812f * Sqr(beta_m) + 3.7f * Pow<20>(beta_m));
+    brdf.v[1] = .25 * brdf.v[0];
+    brdf.v[2] = 4 * brdf.v[0];
+    for (int p = 3; p <= pMax; ++p)
+      brdf.v[p] = brdf.v[2];
+
+    // Compute azimuthal logistic scale factor (s) from beta_n
+    brdf.s = SqrtPiOver8 *
+      (0.265f * beta_n + 1.194f * Sqr(beta_n) + 5.372f * Pow<22>(beta_n));
+
+    // Compute alpha terms (sin2kAlpha, cos2kAlpha) for hair scales
+    auto sin2kAlpha = zero3f;
+    auto cos2kAlpha = zero3f;
+    sin2kAlpha[0] = sin(radians(alpha));
+    cos2kAlpha[0] = SafeSqrt(1 - Sqr(sin2kAlpha[0]));
+    for (int i = 1; i < 3; ++i) {
+      sin2kAlpha[i] = 2 * cos2kAlpha[i - 1] * sin2kAlpha[i - 1];
+      cos2kAlpha[i] = Sqr(cos2kAlpha[i - 1]) - Sqr(sin2kAlpha[i - 1]);
+    }
+
+    auto tangent = eval_normal(instance, element, uv);
+    brdf.frame = inverse(frame_fromzx(zero3f, normal, tangent));
+
+    brdf.eta        = eta;
+    brdf.sigma_a    = sigma_a;
+    brdf.alpha      = alpha;
+    brdf.sin2kAlpha = sin2kAlpha;
+    brdf.cos2kAlpha = cos2kAlpha;
+
+  }
+
   return brdf;
 }
 
@@ -801,6 +886,12 @@ static vec3f eval_emission(
 // Evaluates/sample the BRDF scaled by the cosine of the incoming direction.
 static vec3f eval_brdfcos(const pathtrace_brdf& brdf, const vec3f& normal,
     const vec3f& outgoing, const vec3f& incoming) {
+
+  if (brdf.hair) 
+    return eval_hair(outgoing, incoming, brdf.eta, brdf.h, brdf.sigma_a, 
+                     brdf.cos2kAlpha, brdf.sin2kAlpha, brdf.s, brdf.v, 
+                     brdf.gammaO, brdf.frame);
+
   if (brdf.roughness == 0) return zero3f;
 
   // accumulate the lobes
@@ -859,6 +950,12 @@ static vec3f eval_delta(const pathtrace_brdf& brdf, const vec3f& normal,
 // Picks a direction based on the BRDF
 static vec3f sample_brdfcos(const pathtrace_brdf& brdf, const vec3f& normal,
     const vec3f& outgoing, float rnl, const vec2f& rn) {
+
+  if (brdf.hair) 
+    return sample_hair(outgoing, rn, brdf.eta, brdf.h, brdf.sigma_a, 
+                       brdf.cos2kAlpha, brdf.sin2kAlpha, brdf.s, brdf.v, 
+                       brdf.gammaO, brdf.frame);
+  
   if (brdf.roughness == 0) return zero3f;
 
   auto cdf = 0.0f;
@@ -941,6 +1038,12 @@ static vec3f sample_delta(const pathtrace_brdf& brdf, const vec3f& normal,
 // Compute the weight for sampling the BRDF
 static float sample_brdfcos_pdf(const pathtrace_brdf& brdf, const vec3f& normal,
     const vec3f& outgoing, const vec3f& incoming) {
+
+  if (brdf.hair) 
+    return sample_hair_pdf(outgoing, incoming, brdf.eta, brdf.h, brdf.sigma_a, 
+                           brdf.cos2kAlpha, brdf.sin2kAlpha, brdf.s, brdf.v, 
+                           brdf.gammaO, brdf.frame);
+  
   if (brdf.roughness == 0) return 0;
 
   auto pdf = 0.0f;
@@ -1936,6 +2039,49 @@ void set_normalmap(
     pathtrace_material* material, pathtrace_texture* normal_tex) {
   material->normal_tex = normal_tex;
 }
+
+/* hair */
+void set_sigma_a(pathtrace_material* material, const vec3f& sigma_a,
+    pathtrace_texture* sigma_a_tex) {
+  material->sigma_a     = sigma_a;
+  material->sigma_a_tex = sigma_a_tex;
+}
+void set_hair_color(pathtrace_material* material, const vec3f& hair_color,
+    pathtrace_texture* hair_color_tex) {
+  material->hair_color     = hair_color;
+  material->hair_color_tex = hair_color_tex;
+}
+void set_eumelanin(pathtrace_material* material, float eumelanin,
+    pathtrace_texture* eumelanin_tex) {
+  material->eumelanin     = eumelanin;
+  material->eumelanin_tex = eumelanin_tex;
+}
+void set_pheomelanin(pathtrace_material* material, float pheomelanin,
+    pathtrace_texture* pheomelanin_tex) {
+  material->pheomelanin     = pheomelanin;
+  material->pheomelanin_tex = pheomelanin_tex;
+}
+void set_eta(pathtrace_material* material, float eta,
+    pathtrace_texture* eta_tex) {
+  material->eta     = eta;
+  material->eta_tex = eta_tex;
+}
+void set_beta_m(pathtrace_material* material, float beta_m,
+    pathtrace_texture* beta_m_tex) {
+  material->beta_m     = beta_m;
+  material->beta_m_tex = beta_m_tex;
+}
+void set_beta_n(pathtrace_material* material, float beta_n,
+    pathtrace_texture* beta_n_tex) {
+  material->beta_n     = beta_n;
+  material->beta_n_tex = beta_n_tex;
+}
+void set_alpha(pathtrace_material* material, float alpha,
+    pathtrace_texture* alpha_tex) {
+  material->alpha     = alpha;
+  material->alpha_tex = alpha_tex;
+}
+
 
 // Add environment
 void set_frame(pathtrace_environment* environment, const frame3f& frame) {

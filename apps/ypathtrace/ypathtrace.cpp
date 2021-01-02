@@ -95,6 +95,17 @@ void init_scene(pathtrace_scene* scene, sceneio_scene* ioscene,
     set_scattering(material, iomaterial->scattering, iomaterial->scanisotropy,
         texture_map.at(iomaterial->scattering_tex));
     set_normalmap(material, texture_map.at(iomaterial->normal_tex));
+
+    /* hair */
+    set_sigma_a(material, iomaterial->sigma_a, texture_map.at(iomaterial->sigma_a_tex));
+    set_hair_color(material, iomaterial->hair_color, texture_map.at(iomaterial->hair_color_tex));
+    set_eumelanin(material, iomaterial->eumelanin, texture_map.at(iomaterial->eumelanin_tex));
+    set_pheomelanin(material, iomaterial->pheomelanin, texture_map.at(iomaterial->pheomelanin_tex));
+    set_eta(material, iomaterial->eta, texture_map.at(iomaterial->eta_tex));
+    set_beta_m(material, iomaterial->beta_m, texture_map.at(iomaterial->beta_m_tex));
+    set_beta_n(material, iomaterial->beta_n, texture_map.at(iomaterial->beta_n_tex));
+    set_alpha(material, iomaterial->alpha, texture_map.at(iomaterial->alpha_tex));
+
     material_map[iomaterial] = material;
   }
 
