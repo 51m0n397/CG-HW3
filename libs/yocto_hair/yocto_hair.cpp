@@ -34,7 +34,7 @@ namespace yocto {
         float cosGammaO = SafeSqrt(1 - h * h);
         float cosTheta = cosThetaO * cosGammaO;
         float f = FrDielectric(cosTheta, 1.f, eta); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ap[0] = vec3f{f};
+        ap[0] = vec3f{f, f, f};
 
         // Compute p=1 attenuation term
         ap[1] = Sqr(1 - f) * T;
@@ -43,7 +43,7 @@ namespace yocto {
         for (int p = 2; p < pMax; ++p) ap[p] = ap[p - 1] * T * f;
 
         // Compute attenuation term accounting for remaining orders of scattering
-        ap[pMax] = ap[pMax - 1] * f * T / (vec3f{1.f} - T * f);
+        ap[pMax] = ap[pMax - 1] * f * T / (vec3f{1.f, 1.f, 1.f} - T * f);
         return ap;
     }
 
@@ -189,7 +189,7 @@ namespace yocto {
         // Compute contribution of remaining terms after pMax
         fsum += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, v[pMax]) * ap[pMax] /
                 (2.f * pi);
-        if (AbsCosTheta(wi) > 0) fsum /= AbsCosTheta(wi); //!!!!!!!!!!!!!!!!
+        //if (AbsCosTheta(wi) > 0) fsum /= AbsCosTheta(wi); //!!!!!!!!!!!!!!!!
 
         return fsum;
     }
