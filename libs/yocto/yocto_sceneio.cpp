@@ -1432,6 +1432,9 @@ static bool load_json_scene(const string& filename, sceneio_scene* scene,
         return false;
       if (!get_ctexture(ejs, "normal_tex", material->normal_tex)) return false;
 
+      /* Randomized Texture Tiling */
+      if (!get_value(ejs, "randomize", material->randomize)) return false;
+
       /* hair */
       if (!get_value(ejs, "sigma_a", material->sigma_a)) return false;
       if (!get_value(ejs, "hair_color", material->hair_color)) return false;
@@ -1696,6 +1699,9 @@ static bool save_json_scene(const string& filename, const sceneio_scene* scene,
     add_tex(ejs, "coat_tex", material->coat_tex);
     add_tex(ejs, "opacity_tex", material->opacity_tex);
     add_tex(ejs, "normal_tex", material->normal_tex);
+
+    /* Randomized Texture Tiling */
+    add_opt(ejs, "randomize", material->randomize, def_material.randomize);
 
     /* hair */
     add_opt(ejs, "sigma_a", material->sigma_a, def_material.sigma_a);

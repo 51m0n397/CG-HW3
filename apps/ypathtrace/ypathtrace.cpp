@@ -79,7 +79,7 @@ void init_scene(pathtrace_scene* scene, sceneio_scene* ioscene,
     set_emission(material, iomaterial->emission,
         texture_map.at(iomaterial->emission_tex));
     set_color(
-        material, iomaterial->color, texture_map.at(iomaterial->color_tex));
+        material, iomaterial->color, texture_map.at(iomaterial->color_tex), iomaterial->randomize);
     set_specular(material, iomaterial->specular,
         texture_map.at(iomaterial->specular_tex));
     set_ior(material, iomaterial->ior);

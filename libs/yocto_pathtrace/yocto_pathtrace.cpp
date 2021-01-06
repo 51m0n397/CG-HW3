@@ -36,6 +36,7 @@
 #include <yocto/yocto_shape.h>
 
 #include <yocto_hair/yocto_hair.h>
+#include <yocto_texture/yocto_texture.h>
 
 // -----------------------------------------------------------------------------
 // IMPLEMENTATION FOR SCENE EVALUATION
@@ -72,6 +73,11 @@ static vec4f eval_texture(const pathtrace_texture* texture, const vec2f& uv,
     bool clamp_to_edge = false) {
   // get texture
   if (!texture) return {1, 1, 1};
+
+  /* Randomized Texture Tiling */
+  if (texture->randomize){
+    return lookup_randomized_texture(texture, uv);
+  }
 
   // get yimage width/height
   auto size = texture_size(texture);
@@ -1994,8 +2000,12 @@ void set_emission(pathtrace_material* material, const vec3f& emission,
   material->emission_tex = emission_tex;
 }
 void set_color(pathtrace_material* material, const vec3f& color,
-    pathtrace_texture* color_tex) {
+    pathtrace_texture* color_tex, bool randomize) {
   material->color     = color;
+
+  /* Randomized Texture Tiling */
+  if(color_tex!=nullptr && randomize) gaussianize_texture(color_tex);
+  
   material->color_tex = color_tex;
 }
 void set_specular(pathtrace_material* material, float specular,

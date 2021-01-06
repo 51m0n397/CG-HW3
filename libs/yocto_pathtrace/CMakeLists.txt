@@ -4,3 +4,4 @@ set_target_properties(yocto_pathtrace PROPERTIES CXX_STANDARD 17 CXX_STANDARD_RE
 target_include_directories(yocto_pathtrace PUBLIC ${CMAKE_SOURCE_DIR}/libs)
 target_link_libraries(yocto_pathtrace yocto)
 target_link_libraries(yocto_pathtrace yocto_hair)
+target_link_libraries(yocto_pathtrace yocto_texture)

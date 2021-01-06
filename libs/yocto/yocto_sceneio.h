@@ -139,6 +139,9 @@ struct sceneio_material {
   sceneio_texture* opacity_tex      = nullptr;
   sceneio_texture* normal_tex       = nullptr;
 
+  /* Randomized Texture Tiling */
+  bool randomize = false;
+
   /* hair */
   // using -1 as undefined
   vec3f sigma_a     = {-1, -1, -1};
