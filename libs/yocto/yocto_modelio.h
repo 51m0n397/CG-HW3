@@ -506,6 +506,20 @@ struct pbrt_material {
   vec3f  volmeanfreepath = {0, 0, 0};
   vec3f  volscatter      = {0, 0, 0};
   float  volscale        = 0.01;
+
+  /* hair */
+  // using -1 as undefined
+  vec3f sigma_a     = {-1, -1, -1};
+  vec3f hair_color  = {-1, -1, -1};
+  float eumelanin   = -1;
+  float pheomelanin = -1;
+  float eta         = 1.55;
+  float beta_m      = 0.3;
+  float beta_n      = 0.3;
+  float alpha       = 2;
+  
+  string sigma_a_tex     = "";
+  string hair_color_tex  = "";
 };
 
 // Pbrt shape
@@ -521,6 +535,8 @@ struct pbrt_shape {
   vector<vec3f> normals   = {};
   vector<vec2f> texcoords = {};
   vector<vec3i> triangles = {};
+  vector<vec2i> lines     = {};
+  vector<float> radius    = {};
   // material
   string material = "";
 };

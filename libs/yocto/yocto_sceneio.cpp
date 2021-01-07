@@ -2818,6 +2818,19 @@ static bool load_pbrt_scene(const string& filename, sceneio_scene* scene,
     material->opacity_tex  = get_stexture(pmaterial->opacity_tex);
     if (material->opacity_tex == nullptr)
       material->opacity_tex = get_atexture(pmaterial->alpha_tex);
+
+    /* hair */
+    material->sigma_a        = pmaterial->sigma_a;
+    material->hair_color     = pmaterial->hair_color;
+    material->eumelanin      = pmaterial->eumelanin;
+    material->pheomelanin    = pmaterial->pheomelanin;
+    material->eta            = pmaterial->eta;
+    material->beta_m         = pmaterial->beta_m;
+    material->beta_n         = pmaterial->beta_n;
+    material->alpha          = pmaterial->alpha;
+    material->sigma_a_tex    = get_ctexture(pmaterial->sigma_a_tex);
+    material->hair_color_tex = get_ctexture(pmaterial->hair_color_tex);
+
     material_map[pmaterial->name] = material;
   }
 
@@ -2831,6 +2844,8 @@ static bool load_pbrt_scene(const string& filename, sceneio_scene* scene,
     shape->normals   = pshape->normals;
     shape->texcoords = pshape->texcoords;
     shape->triangles = pshape->triangles;
+    shape->lines     = pshape->lines;
+    shape->radius    = pshape->radius;
     for (auto& uv : shape->texcoords) uv.y = 1 - uv.y;
     auto material = material_map.at(pshape->material);
     if (pshape->instances.empty()) {

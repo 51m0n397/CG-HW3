@@ -39,6 +39,7 @@
 
 #include "yocto_color.h"
 #include "yocto_commonio.h"
+#include "yocto_geometry.h"
 
 // -----------------------------------------------------------------------------
 // USING DIRECTIVES
@@ -3925,11 +3926,24 @@ inline bool convert_material(pbrt_material*     pmaterial,
       return parse_error();
     return true;
   } else if (command.type == "hair") {
-    if (!get_texture(command.values, "color", pmaterial->color,
-            pmaterial->color_tex, vec3f{0, 0, 0}))
+    if (!get_texture(command.values, "sigma_a", pmaterial->sigma_a,
+            pmaterial->sigma_a_tex, vec3f{-1, -1, -1}))
       return parse_error();
-    pmaterial->roughness = 1;
-    if (verbose) printf("hair material not properly supported\n");
+    if (!get_texture(command.values, "color", pmaterial->hair_color,
+            pmaterial->hair_color_tex, vec3f{-1, -1, -1}))
+      return parse_error();
+    if (!get_scalar(command.values, "eumelanin", pmaterial->eumelanin, -1))
+      return parse_error();
+    if (!get_scalar(command.values, "pheomelanin", pmaterial->pheomelanin, -1))
+      return parse_error();
+    if (!get_scalar(command.values, "eta", pmaterial->eta, 1.55))
+      return parse_error();
+    if (!get_scalar(command.values, "beta_m", pmaterial->beta_m, 0.3))
+      return parse_error();
+    if (!get_scalar(command.values, "beta_n", pmaterial->beta_n, 0.3))
+      return parse_error();
+    if (!get_scalar(command.values, "alpha", pmaterial->alpha, 2))
+      return parse_error();
     return true;
   } else if (command.type == "disney") {
     if (!get_texture(command.values, "color", pmaterial->color,
@@ -4191,6 +4205,35 @@ inline bool convert_shape(pbrt_shape* shape, const pbrt_command& command,
     if (!get_pbrt_value(command.values, "radius", radius)) return parse_error();
     make_disk(shape->triangles, shape->positions, shape->normals,
         shape->texcoords, {32, 1}, radius);
+    return true;
+  } if (command.type == "curve") {
+    auto width0 = 0.0f;
+    auto width1 = 0.0f;
+    if (!get_pbrt_value(command.values, "width0", width0) || 
+        !get_pbrt_value(command.values, "width1", width1)) {
+      auto width = 0.0f;
+      if (!get_pbrt_value(command.values, "width", width)) return parse_error();
+      width0 = width;
+      width1 = width;
+    }
+
+    vector<vec3f> beziers = {};
+    if (!get_pbrt_value(command.values, "P", beziers)) return parse_error();
+
+    shape->positions = {};
+    shape->lines     = {};
+    shape->radius    = {};
+
+    auto subdivisions = 4;
+
+    for (auto i=0; i<subdivisions; i++) {
+      shape->positions.push_back(interpolate_bezier(beziers[0], beziers[1], 
+                                                    beziers[2], beziers[3], 
+                                                    float(i) / (subdivisions-1)));
+      if (i>0) shape->lines.push_back(vec2i{i-1, i});
+      shape->radius.push_back(lerp(width0, width1, float(i) / (subdivisions-1)));
+    }
+
     return true;
   } else {
     return type_error();
