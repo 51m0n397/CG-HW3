@@ -2837,18 +2837,44 @@ static bool load_pbrt_scene(const string& filename, sceneio_scene* scene,
   // hack for pbrt empty material
   material_map[""] = add_material(scene);
 
+  auto line_shapes_map = unordered_map<string, sceneio_shape*>{};
+
   // convert shapes
   for (auto pshape : pbrt->shapes) {
+    /* hair */
+    if (!pshape->lines.empty()) {
+      if (line_shapes_map.count(pshape->material)) {
+        auto shape = line_shapes_map.at(pshape->material);
+
+        auto merge_verts = (int)shape->positions.size();
+        for (auto& l : pshape->lines)
+          shape->lines.push_back({l.x + merge_verts, l.y + merge_verts});
+
+        shape->positions.insert(
+          shape->positions.end(), pshape->positions.begin(), pshape->positions.end());
+
+        shape->radius.insert(shape->radius.end(), pshape->radius.begin(), pshape->radius.end());
+      } else {
+        auto shape       = add_shape(scene);
+        shape->positions = pshape->positions;
+        shape->lines     = pshape->lines;
+        shape->radius    = pshape->radius;
+        auto material = material_map.at(pshape->material);
+        auto instance      = add_instance(scene);
+        instance->frame    = pshape->frame;
+        instance->shape    = shape;
+        instance->material = material;
+        line_shapes_map[pshape->material] = shape;
+      }
+      continue;
+    }
+
     auto shape       = add_shape(scene);
     shape->positions = pshape->positions;
     shape->normals   = pshape->normals;
     shape->texcoords = pshape->texcoords;
     shape->triangles = pshape->triangles;
 
-    /* hair */
-    shape->lines     = pshape->lines;
-    shape->radius    = pshape->radius;
-    
     for (auto& uv : shape->texcoords) uv.y = 1 - uv.y;
     auto material = material_map.at(pshape->material);
     if (pshape->instances.empty()) {
