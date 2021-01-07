@@ -3926,6 +3926,9 @@ inline bool convert_material(pbrt_material*     pmaterial,
       return parse_error();
     return true;
   } else if (command.type == "hair") {
+    /* hair */
+
+    // get hair parameters from pbrt file
     if (!get_texture(command.values, "sigma_a", pmaterial->sigma_a,
             pmaterial->sigma_a_tex, vec3f{-1, -1, -1}))
       return parse_error();
@@ -3944,6 +3947,7 @@ inline bool convert_material(pbrt_material*     pmaterial,
       return parse_error();
     if (!get_scalar(command.values, "alpha", pmaterial->alpha, 2))
       return parse_error();
+      
     return true;
   } else if (command.type == "disney") {
     if (!get_texture(command.values, "color", pmaterial->color,
@@ -4207,8 +4211,12 @@ inline bool convert_shape(pbrt_shape* shape, const pbrt_command& command,
         shape->texcoords, {32, 1}, radius);
     return true;
   } if (command.type == "curve") {
+    /* hair */
+
+    // get parameters from pbrt files
     auto width0 = 0.0f;
     auto width1 = 0.0f;
+    vector<vec3f> beziers = {};
     if (!get_pbrt_value(command.values, "width0", width0) || 
         !get_pbrt_value(command.values, "width1", width1)) {
       auto width = 0.0f;
@@ -4216,10 +4224,9 @@ inline bool convert_shape(pbrt_shape* shape, const pbrt_command& command,
       width0 = width;
       width1 = width;
     }
-
-    vector<vec3f> beziers = {};
     if (!get_pbrt_value(command.values, "P", beziers)) return parse_error();
 
+    // subdivide bezier curve into lines
     shape->positions = {};
     shape->lines     = {};
     shape->radius    = {};

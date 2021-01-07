@@ -124,7 +124,8 @@ void init_scene(pathtrace_scene* scene, sceneio_scene* ioscene,
     set_emission(material, iomaterial->emission,
         texture_map.at(iomaterial->emission_tex));
     set_color(
-        material, iomaterial->color, texture_map.at(iomaterial->color_tex), iomaterial->randomize);
+        material, iomaterial->color, texture_map.at(iomaterial->color_tex), 
+        iomaterial->randomize); // Randomized Texture Tiling
     set_specular(material, iomaterial->specular,
         texture_map.at(iomaterial->specular_tex));
     set_ior(material, iomaterial->ior);

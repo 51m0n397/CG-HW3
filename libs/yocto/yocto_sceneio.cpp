@@ -2844,8 +2844,11 @@ static bool load_pbrt_scene(const string& filename, sceneio_scene* scene,
     shape->normals   = pshape->normals;
     shape->texcoords = pshape->texcoords;
     shape->triangles = pshape->triangles;
+
+    /* hair */
     shape->lines     = pshape->lines;
     shape->radius    = pshape->radius;
+    
     for (auto& uv : shape->texcoords) uv.y = 1 - uv.y;
     auto material = material_map.at(pshape->material);
     if (pshape->instances.empty()) {
