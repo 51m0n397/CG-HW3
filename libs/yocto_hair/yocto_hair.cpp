@@ -33,7 +33,7 @@ namespace yocto {
         // Compute p=0 attenuation at initial cylinder intersection
         float cosGammaO = SafeSqrt(1 - h * h);
         float cosTheta = cosThetaO * cosGammaO;
-        float f = FrDielectric(cosTheta, 1.f, eta); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        float f = FrDielectric(cosTheta, 1.f, eta);
         ap[0] = vec3f{f, f, f};
 
         // Compute p=1 attenuation term
@@ -126,7 +126,8 @@ namespace yocto {
 
     vec3f eval_hair(const vec3f& outgoing, const vec3f& incoming, float eta, 
                     float h, vec3f sigma_a, const vec3f& cos2kAlpha, 
-                    const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, float gammaO, const frame3f& frame) {
+                    const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, 
+                    float gammaO, const frame3f& frame) {
 
         vec3f wo = transform_direction(frame, outgoing);
         vec3f wi = transform_direction(frame, incoming);
@@ -196,7 +197,8 @@ namespace yocto {
 
     vec3f sample_hair(const vec3f& outgoing, const vec2f& rn, float eta, 
                       float h, vec3f sigma_a, const vec3f& cos2kAlpha, 
-                      const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, float gammaO, const frame3f& frame) {
+                      const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, 
+                      float gammaO, const frame3f& frame) {
         
         vec3f wo = transform_direction(frame, outgoing);
         
@@ -266,7 +268,8 @@ namespace yocto {
 
     float sample_hair_pdf(const vec3f& outgoing, const vec3f& incoming, float eta, 
                           float h, vec3f sigma_a, const vec3f& cos2kAlpha, 
-                          const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, float gammaO, const frame3f& frame) {
+                          const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, 
+                          float gammaO, const frame3f& frame) {
         
         vec3f wo = transform_direction(frame, outgoing);
         vec3f wi = transform_direction(frame, incoming);

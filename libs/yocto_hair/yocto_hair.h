@@ -26,15 +26,18 @@ namespace yocto {
 
     vec3f eval_hair(const vec3f& outgoing, const vec3f& incoming, float eta, 
                     float h, vec3f sigma_a, const vec3f& cos2kAlpha, 
-                    const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, float gammaO, const frame3f& frame);
+                    const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, 
+                    float gammaO, const frame3f& frame);
 
     vec3f sample_hair(const vec3f& outgoing, const vec2f& rn, float eta, 
                       float h, vec3f sigma_a, const vec3f& cos2kAlpha, 
-                      const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, float gammaO, const frame3f& frame);
+                      const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, 
+                      float gammaO, const frame3f& frame);
 
     float sample_hair_pdf(const vec3f& outgoing, const vec3f& incoming, float eta, 
                           float h, vec3f sigma_a, const vec3f& cos2kAlpha, 
-                          const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, float gammaO, const frame3f& frame);
+                          const vec3f& sin2kAlpha, float s, const array<float, pMax + 1> v, 
+                          float gammaO, const frame3f& frame);
 
 } // namespace yocto
 

@@ -438,6 +438,7 @@ static pathtrace_brdf eval_brdf(const pathtrace_instance* instance, int element,
       cos2kAlpha[i] = Sqr(cos2kAlpha[i - 1]) - Sqr(sin2kAlpha[i - 1]);
     }
 
+    // compute reference frame
     auto tangent = eval_normal(instance, element, uv);
     brdf.frame = inverse(frame_fromzx(zero3f, normal, tangent));
 
@@ -892,7 +893,7 @@ static vec3f eval_emission(
 // Evaluates/sample the BRDF scaled by the cosine of the incoming direction.
 static vec3f eval_brdfcos(const pathtrace_brdf& brdf, const vec3f& normal,
     const vec3f& outgoing, const vec3f& incoming) {
-
+  /* hair */
   if (brdf.hair) 
     return eval_hair(outgoing, incoming, brdf.eta, brdf.h, brdf.sigma_a, 
                      brdf.cos2kAlpha, brdf.sin2kAlpha, brdf.s, brdf.v, 
@@ -956,7 +957,7 @@ static vec3f eval_delta(const pathtrace_brdf& brdf, const vec3f& normal,
 // Picks a direction based on the BRDF
 static vec3f sample_brdfcos(const pathtrace_brdf& brdf, const vec3f& normal,
     const vec3f& outgoing, float rnl, const vec2f& rn) {
-
+  /* hair */
   if (brdf.hair) 
     return sample_hair(outgoing, rn, brdf.eta, brdf.h, brdf.sigma_a, 
                        brdf.cos2kAlpha, brdf.sin2kAlpha, brdf.s, brdf.v, 
@@ -1044,7 +1045,7 @@ static vec3f sample_delta(const pathtrace_brdf& brdf, const vec3f& normal,
 // Compute the weight for sampling the BRDF
 static float sample_brdfcos_pdf(const pathtrace_brdf& brdf, const vec3f& normal,
     const vec3f& outgoing, const vec3f& incoming) {
-
+  /* hair */
   if (brdf.hair) 
     return sample_hair_pdf(outgoing, incoming, brdf.eta, brdf.h, brdf.sigma_a, 
                            brdf.cos2kAlpha, brdf.sin2kAlpha, brdf.s, brdf.v, 

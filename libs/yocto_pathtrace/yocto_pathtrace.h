@@ -282,7 +282,7 @@ void set_texture(pathtrace_texture* texture, const image<vec4f>& img);
 void set_emission(pathtrace_material* material, const vec3f& emission,
     pathtrace_texture* emission_tex = nullptr);
 void set_color(pathtrace_material* material, const vec3f& color,
-    pathtrace_texture* color_tex = nullptr, bool randomize = false);
+    pathtrace_texture* color_tex = nullptr, bool randomize = false); // Randomized Texture Tiling
 void set_specular(pathtrace_material* material, float specular = 1,
     pathtrace_texture* specular_tex = nullptr);
 void set_ior(pathtrace_material* material, float ior);
