@@ -190,7 +190,7 @@ namespace yocto {
         // Compute contribution of remaining terms after pMax
         fsum += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, v[pMax]) * ap[pMax] /
                 (2.f * pi);
-        //if (AbsCosTheta(wi) > 0) fsum /= AbsCosTheta(wi); //!!!!!!!!!!!!!!!!
+        if (AbsCosTheta(wi) > 0) fsum /= AbsCosTheta(wi);
 
         return fsum;
     }

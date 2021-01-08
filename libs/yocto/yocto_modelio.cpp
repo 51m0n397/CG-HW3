@@ -4233,12 +4233,12 @@ inline bool convert_shape(pbrt_shape* shape, const pbrt_command& command,
 
     auto subdivisions = 4;
 
-    for (auto i=0; i<subdivisions; i++) {
+    for (auto i=0; i<=subdivisions; i++) {
       shape->positions.push_back(interpolate_bezier(beziers[0], beziers[1], 
                                                     beziers[2], beziers[3], 
-                                                    float(i) / (subdivisions-1)));
+                                                    float(i) / (subdivisions)));
       if (i>0) shape->lines.push_back(vec2i{i-1, i});
-      shape->radius.push_back(lerp(width0, width1, float(i) / (subdivisions-1)));
+      shape->radius.push_back(lerp(width0, width1, float(i) / (subdivisions)));
     }
 
     return true;
