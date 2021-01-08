@@ -1688,7 +1688,6 @@ static void tesselate_catmullclark(
   // initialize number of elements
   auto nv = (int)vert.size();
   auto ne = (int)edges.size();
-  auto nb = (int)boundary.size();
   auto nf = (int)quads.size();
 
   //<create vertices>
