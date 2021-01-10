@@ -79,13 +79,13 @@
       "roughness": 1
     },
     "hair1": {
-      "hair_color": [0.7, 0, 0]
+      "hair_color": [0.5, 0, 0]
     },
     "hair2": {
-      "hair_color": [0, 0.7, 0]
+      "hair_color": [0, 0.5, 0]
     },
     "hair3": {
-      "hair_color": [0, 0, 0.7]
+      "hair_color": [0, 0, 0.5]
     }
   }
 }
